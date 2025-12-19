@@ -1,238 +1,192 @@
-# 🤖 Chat Agent Starter Kit
+# 🎙️ VoiceTasker
 
-![npm i agents command](./npm-agents-banner.svg)
+An AI-powered task scheduler with voice input, built on Cloudflare's serverless platform.
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/agents-starter"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
+## 🚀 Live Demo
 
-A starter template for building AI-powered chat agents using Cloudflare's Agent platform, powered by [`agents`](https://www.npmjs.com/package/agents). This project provides a foundation for creating interactive chat experiences with AI, complete with a modern UI and tool integration capabilities.
+[https://cf-ai-voicetasker.tejareddypapadasu.workers.dev/]
 
-## Features
+## ✨ Features
 
-- 💬 Interactive chat interface with AI
-- 🛠️ Built-in tool system with human-in-the-loop confirmation
-- 📅 Advanced task scheduling (one-time, delayed, and recurring via cron)
-- 🌓 Dark/Light theme support
-- ⚡️ Real-time streaming responses
-- 🔄 State management and chat history
-- 🎨 Modern, responsive UI
+- 🎤 **Voice Input**: Hold the microphone button to speak your tasks naturally
+- 🧠 **Natural Language Understanding**: Powered by Llama 3.1 70B to parse commands like "Remind me to call mom tomorrow at 5pm"
+- 📋 **Task Management**: Create, list, complete, and delete tasks
+- ⚡ **Real-time Responses**: WebSocket-based streaming for instant feedback
+- 🌐 **Serverless**: Runs entirely on Cloudflare's global edge network - no servers to manage
+- 🆓 **Free Tier**: Works within Cloudflare's generous free tier limits
 
-## Prerequisites
+## 🏗️ Architecture
 
-- Cloudflare account
-- OpenAI API key
+| Component | Technology |
+|-----------|------------|
+| **LLM** | Llama 3.1 70B Instruct via Workers AI |
+| **Speech-to-Text** | Whisper Large v3 Turbo via Workers AI |
+| **Agent Framework** | Cloudflare Agents SDK |
+| **State Management** | Durable Objects |
+| **Frontend** | React + Tailwind CSS |
+| **Build Tool** | Vite with Cloudflare plugin |
 
-## Quick Start
+## 🔄 How It Works
 
-1. Create a new project:
-
-```bash
-npx create-cloudflare@latest --template cloudflare/agents-starter
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User speaks: "Remind me to call mom tomorrow at 5pm"       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Whisper (Workers AI) → Transcribes audio to text           │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Llama 3.1 70B → Understands intent, generates response     │
+│  with JSON action block                                     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Action Parser → Extracts and executes task operation       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Response: "I'll set that reminder for you! ✅"             │
+│  Task: "Call mom" scheduled for Dec 19, 2025 at 5:00 PM     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-2. Install dependencies:
+## 📁 Project Structure
+
+```
+cf_ai_taskmanager/
+├── src/
+│   ├── app.tsx          # React frontend with chat UI + voice recorder
+│   ├── server.ts        # Agent logic, LLM integration, action parsing
+│   ├── tools.ts         # Tool definitions (legacy, kept for compatibility)
+│   ├── utils.ts         # Helper functions
+│   └── components/      # UI components (from starter template)
+├── wrangler.jsonc       # Cloudflare Workers configuration
+├── package.json         # Dependencies
+├── README.md            # This file
+├── PROMPTS.md           # AI prompts documentation
+└── vite.config.ts       # Build configuration
+```
+
+## 🛠️ Prerequisites
+
+- [Node.js](https://nodejs.org/) v18+
+- [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier works!)
+
+## 🚀 Quick Start
+
+### 1. Clone and Install
 
 ```bash
+git clone https://github.com/TejaBunny/cf_ai_taskmanager.git
+cd cf_ai_taskmanager
 npm install
 ```
 
-3. Set up your environment:
-
-Create a `.dev.vars` file:
-
-```env
-OPENAI_API_KEY=your_openai_api_key
-```
-
-4. Run locally:
+### 2. Login to Cloudflare
 
 ```bash
-npm start
+npx wrangler login
 ```
 
-5. Deploy:
+### 3. Run Locally
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### 4. Deploy to Production
 
 ```bash
 npm run deploy
 ```
 
-## Project Structure
+Your app will be live at the URL shown in the terminal.
 
-```
-├── src/
-│   ├── app.tsx        # Chat UI implementation
-│   ├── server.ts      # Chat agent logic
-│   ├── tools.ts       # Tool definitions
-│   ├── utils.ts       # Helper functions
-│   └── styles.css     # UI styling
-```
+## 💬 Usage Examples
 
-## Customization Guide
+### Voice Commands (hold microphone button)
 
-### Adding New Tools
+- "Remind me to submit my assignment tomorrow at 5pm"
+- "Schedule a meeting for next Monday at 2pm"
+- "Add a task to buy groceries this evening"
 
-Add new tools in `tools.ts` using the tool builder:
+### Text Commands
 
-```ts
-// Example of a tool that requires confirmation
-const searchDatabase = tool({
-  description: "Search the database for user records",
-  parameters: z.object({
-    query: z.string(),
-    limit: z.number().optional()
-  })
-  // No execute function = requires confirmation
-});
+- "Show me my tasks" - List all tasks
+- "Delete the grocery task" - Remove a specific task
+- "Mark the meeting as complete" - Complete a task
+- "What tasks do I have pending?" - Filter by status
 
-// Example of an auto-executing tool
-const getCurrentTime = tool({
-  description: "Get current server time",
-  parameters: z.object({}),
-  execute: async () => new Date().toISOString()
-});
+## ☁️ Cloudflare Services Used
 
-// Scheduling tool implementation
-const scheduleTask = tool({
-  description:
-    "schedule a task to be executed at a later time. 'when' can be a date, a delay in seconds, or a cron pattern.",
-  parameters: z.object({
-    type: z.enum(["scheduled", "delayed", "cron"]),
-    when: z.union([z.number(), z.string()]),
-    payload: z.string()
-  }),
-  execute: async ({ type, when, payload }) => {
-    // ... see the implementation in tools.ts
-  }
-});
+| Service | Purpose |
+|---------|---------|
+| **Workers AI** | LLM inference (Llama 3.1) and speech recognition (Whisper) |
+| **Durable Objects** | Stateful agent with WebSocket support |
+| **Workers** | Serverless compute for API endpoints |
+| **Assets** | Serve static frontend files |
+
+## 📊 Free Tier Limits
+
+| Resource | Free Limit |
+|----------|------------|
+| Worker Requests | 100,000/day |
+| Workers AI (Neurons) | 10,000/day |
+| Durable Objects Requests | 1,000,000/month |
+| Durable Objects Storage | 1 GB |
+
+## 🔧 Development
+
+### Generate TypeScript Types
+
+```bash
+npm run types
 ```
 
-To handle tool confirmations, add execution functions to the `executions` object:
+### Format Code
 
-```typescript
-export const executions = {
-  searchDatabase: async ({
-    query,
-    limit
-  }: {
-    query: string;
-    limit?: number;
-  }) => {
-    // Implementation for when the tool is confirmed
-    const results = await db.search(query, limit);
-    return results;
-  }
-  // Add more execution handlers for other tools that require confirmation
-};
+```bash
+npm run format
 ```
 
-Tools can be configured in two ways:
+### Run Linter
 
-1. With an `execute` function for automatic execution
-2. Without an `execute` function, requiring confirmation and using the `executions` object to handle the confirmed action. NOTE: The keys in `executions` should match `toolsRequiringConfirmation` in `app.tsx`.
-
-### Use a different AI model provider
-
-The starting [`server.ts`](https://github.com/cloudflare/agents-starter/blob/main/src/server.ts) implementation uses the [`ai-sdk`](https://sdk.vercel.ai/docs/introduction) and the [OpenAI provider](https://sdk.vercel.ai/providers/ai-sdk-providers/openai), but you can use any AI model provider by:
-
-1. Installing an alternative AI provider for the `ai-sdk`, such as the [`workers-ai-provider`](https://sdk.vercel.ai/providers/community-providers/cloudflare-workers-ai) or [`anthropic`](https://sdk.vercel.ai/providers/ai-sdk-providers/anthropic) provider:
-2. Replacing the AI SDK with the [OpenAI SDK](https://github.com/openai/openai-node)
-3. Using the Cloudflare [Workers AI + AI Gateway](https://developers.cloudflare.com/ai-gateway/providers/workersai/#workers-binding) binding API directly
-
-For example, to use the [`workers-ai-provider`](https://sdk.vercel.ai/providers/community-providers/cloudflare-workers-ai), install the package:
-
-```sh
-npm install workers-ai-provider
+```bash
+npm run check
 ```
 
-Add an `ai` binding to `wrangler.jsonc`:
+## ⚠️ Known Limitations
 
-```jsonc
-// rest of file
-  "ai": {
-    "binding": "AI"
-  }
-// rest of file
-```
+- Voice recording requires microphone permission
+- Maximum audio length ~30 seconds per recording
+- Tasks stored in-memory (reset on Durable Object hibernation)
+- Workers AI models may have occasional latency spikes
 
-Replace the `@ai-sdk/openai` import and usage with the `workers-ai-provider`:
+## 🗺️ Future Improvements
 
-```diff
-// server.ts
-// Change the imports
-- import { openai } from "@ai-sdk/openai";
-+ import { createWorkersAI } from 'workers-ai-provider';
+- [ ] Persistent SQLite storage for tasks
+- [ ] Browser push notifications when tasks are due
+- [ ] Recurring task support (daily, weekly)
+- [ ] Multiple user support with authentication
+- [ ] Calendar integration
 
-// Create a Workers AI instance
-+ const workersai = createWorkersAI({ binding: env.AI });
-
-// Use it when calling the streamText method (or other methods)
-// from the ai-sdk
-- const model = openai("gpt-4o-2024-11-20");
-+ const model = workersai("@cf/deepseek-ai/deepseek-r1-distill-qwen-32b")
-```
-
-Commit your changes and then run the `agents-starter` as per the rest of this README.
-
-### Modifying the UI
-
-The chat interface is built with React and can be customized in `app.tsx`:
-
-- Modify the theme colors in `styles.css`
-- Add new UI components in the chat container
-- Customize message rendering and tool confirmation dialogs
-- Add new controls to the header
-
-### Example Use Cases
-
-1. **Customer Support Agent**
-   - Add tools for:
-     - Ticket creation/lookup
-     - Order status checking
-     - Product recommendations
-     - FAQ database search
-
-2. **Development Assistant**
-   - Integrate tools for:
-     - Code linting
-     - Git operations
-     - Documentation search
-     - Dependency checking
-
-3. **Data Analysis Assistant**
-   - Build tools for:
-     - Database querying
-     - Data visualization
-     - Statistical analysis
-     - Report generation
-
-4. **Personal Productivity Assistant**
-   - Implement tools for:
-     - Task scheduling with flexible timing options
-     - One-time, delayed, and recurring task management
-     - Task tracking with reminders
-     - Email drafting
-     - Note taking
-
-5. **Scheduling Assistant**
-   - Build tools for:
-     - One-time event scheduling using specific dates
-     - Delayed task execution (e.g., "remind me in 30 minutes")
-     - Recurring tasks using cron patterns
-     - Task payload management
-     - Flexible scheduling patterns
-
-Each use case can be implemented by:
-
-1. Adding relevant tools in `tools.ts`
-2. Customizing the UI for specific interactions
-3. Extending the agent's capabilities in `server.ts`
-4. Adding any necessary external API integrations
-
-## Learn More
-
-- [`agents`](https://github.com/cloudflare/agents/blob/main/packages/agents/README.md)
-- [Cloudflare Agents Documentation](https://developers.cloudflare.com/agents/)
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-
-## License
+## 📄 License
 
 MIT
+
+## 🙏 Acknowledgments
+
+Built with:
+- [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/)
+- [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/)
+- [Vercel AI SDK](https://sdk.vercel.ai/)
+- [React](https://react.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
